@@ -7,7 +7,7 @@ import re
 import regex
 
 
-class MarkovChains(dict):
+class AMarkovChains(dict):
     def __add__(self, other):
         """Adds chains from other MarkovChains object.
 
@@ -34,14 +34,14 @@ class MarkovChains(dict):
         """
         self.ignorecase = ignorecase
         self.re = regex if use_regex else re
-        if isinstance(other, MarkovChains):
+        if isinstance(other, AMarkovChains):
             dict.__init__(**other)
             self.ignorecase = other.ignorecase
 
     def __str__(self):
         return "[%s]" % (", ".join("[%s]=>%s" % (key, self[key]) for key in self.keys()))
 
-    def add(self, key, next_chain=""):
+    async def add(self, key, next_chain=""):
         """Adds a new chain.
 
         Arguments:
@@ -50,13 +50,13 @@ class MarkovChains(dict):
         Keyword Arguments:
             next_chain {str} -- name of next chain. (default: {key})
         """
-        key = self._contains(key)
+        key = await self._contains(key)
         if key not in self:
             self[key] = [next_chain]
         else:
             self[key].append(next_chain)
 
-    def contains(self, key):
+    async def contains(self, key):
         """Returns string object, if key in MarkovChains.
 
         Arguments:
@@ -74,13 +74,13 @@ class MarkovChains(dict):
             if key in self.keys():
                 return key
 
-    def _contains(self, key):
-        timed_key = self.contains(key)
+    async def _contains(self, key):
+        timed_key = await self.contains(key)
         if timed_key:
             return timed_key
         return key
 
-    def genseq(self, length=1, auth=None):
+    async def genseq(self, length=1, auth=None):
         """Generates sequence.
 
         Keyword Arguments:
@@ -92,15 +92,15 @@ class MarkovChains(dict):
         """
         if not auth:
             auth = choice([i for i in self.keys()])
-        now = choice(self[self._contains(auth)])
+        now = choice(self[await self._contains(auth)])
 
         generated = []
         for i in range(length):
             generated.append(now)
-            now = choice(self[self._contains(now)])
+            now = choice(self[await self._contains(now)])
         return generated
 
-    def genstr(self, length=1, auth=None, sep=" "):
+    async def genstr(self, length=1, auth=None, sep=" "):
         """Generates string.
 
         Keyword Arguments:
@@ -111,9 +111,9 @@ class MarkovChains(dict):
         Returns:
             list -- generated string
         """
-        return sep.join(self.genseq(length, auth))
+        return sep.join(await self.genseq(length, auth))
 
-    def to_chains(self, text, sep=r"\s+"):
+    async def to_chains(self, text, sep=r"\s+"):
         """Translates text to chains.
 
         Arguments:
@@ -123,4 +123,4 @@ class MarkovChains(dict):
         words = self.re.split(sep, text)
         length = len(words)
         for i in range(length-1):
-            self.add(words[i], words[i+1])
+            await self.add(words[i], words[i+1])

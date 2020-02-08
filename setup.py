@@ -5,10 +5,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mchains",
-    version="0.1",
+    version="0.2",
     author="Ethosa",
     author_email="social.ethosa@gmail.com",
-    description="",
+    description="markov chains tools",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Ethosa/mchains",
