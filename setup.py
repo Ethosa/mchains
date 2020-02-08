@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mchains",
-    version="0.2",
+    version="0.3",
     author="Ethosa",
     author_email="social.ethosa@gmail.com",
     description="markov chains tools",
@@ -29,5 +29,5 @@ setuptools.setup(
         "Github": "https://github.com/Ethosa/mchains",
     },
     python_requires=">=3",
-    install_requires=[]
+    install_requires=["regex"]
 )

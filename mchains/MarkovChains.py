@@ -34,6 +34,11 @@ class MarkovChains(dict):
         """
         self.ignorecase = ignorecase
         self.re = regex if use_regex else re
+        if regex:
+            self.error = regex._regex_core.error
+        else:
+            self.error = re.error
+
         if isinstance(other, MarkovChains):
             dict.__init__(**other)
             self.ignorecase = other.ignorecase
@@ -67,7 +72,10 @@ class MarkovChains(dict):
         """
         if self.ignorecase:
             text = "\n" + "\n".join([key for key in self.keys()]) + "\n"
-            found = self.re.findall("\n(%s)\n" % key, text, self.re.IGNORECASE)
+            try:
+                found = self.re.findall("\n(%s)\n" % key, text, self.re.IGNORECASE)
+            except self.error:
+                found = self.re.findall("\n(\\%s)\n" % key, text, self.re.IGNORECASE)
             if found:
                 return found[0]
         else:
@@ -113,6 +121,21 @@ class MarkovChains(dict):
         """
         return sep.join(self.genseq(length, auth))
 
+    def genstr_normal(self, length=1, auth=None, sep=" "):
+        """Generates string.
+
+        Keyword Arguments:
+            length {number} -- length of string (default: {1})
+            auth {str} -- auth chain name (default: {random})
+            sep {str} -- word separator (default: {" "})
+
+        Returns:
+            list -- generated string
+        """
+        string = sep.join(self.genseq(length, auth))
+        string = self.re.sub(r"[ ]+([\?\!\,\.])[ ]+", r"\1 ", string)
+        return self.re.sub(r"[ ]{2,}", r" ", string).strip()
+
     def to_chains(self, text, sep=r"\s+"):
         """Translates text to chains.
 
@@ -124,3 +147,12 @@ class MarkovChains(dict):
         length = len(words)
         for i in range(length-1):
             self.add(words[i], words[i+1])
+
+    def to_chains_marks(self, text):
+        """
+        Translates text to chains with punctuation marks.
+
+        Arguments:
+            text {str}
+        """
+        self.to_chains(text, r"\b")

@@ -34,6 +34,11 @@ class AMarkovChains(dict):
         """
         self.ignorecase = ignorecase
         self.re = regex if use_regex else re
+        if regex:
+            self.error = regex._regex_core.error
+        else:
+            self.error = re.error
+
         if isinstance(other, AMarkovChains):
             dict.__init__(**other)
             self.ignorecase = other.ignorecase
@@ -67,7 +72,10 @@ class AMarkovChains(dict):
         """
         if self.ignorecase:
             text = "\n" + "\n".join([key for key in self.keys()]) + "\n"
-            found = self.re.findall("\n(%s)\n" % key, text, self.re.IGNORECASE)
+            try:
+                found = self.re.findall("\n(%s)\n" % key, text, self.re.IGNORECASE)
+            except self.error:
+                found = self.re.findall("\n(\\%s)\n" % key, text, self.re.IGNORECASE)
             if found:
                 return found[0]
         else:
@@ -113,6 +121,21 @@ class AMarkovChains(dict):
         """
         return sep.join(await self.genseq(length, auth))
 
+    async def genstr_normal(self, length=1, auth=None, sep=" "):
+        """Generates string.
+
+        Keyword Arguments:
+            length {number} -- length of string (default: {1})
+            auth {str} -- auth chain name (default: {random})
+            sep {str} -- word separator (default: {" "})
+
+        Returns:
+            list -- generated string
+        """
+        string = sep.join(await self.genseq(length, auth))
+        string = self.re.sub(r"[ ]+([\?\!\,\.])[ ]+", r"\1 ", string)
+        return self.re.sub(r"[ ]{2,}", r" ", string).strip()
+
     async def to_chains(self, text, sep=r"\s+"):
         """Translates text to chains.
 
@@ -124,3 +147,12 @@ class AMarkovChains(dict):
         length = len(words)
         for i in range(length-1):
             await self.add(words[i], words[i+1])
+
+    async def to_chains_marks(self, text):
+        """
+        Translates text to chains with punctuation marks.
+
+        Arguments:
+            text {str}
+        """
+        await self.to_chains(text, r"\b")
